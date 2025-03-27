@@ -1,14 +1,18 @@
-import 'package:billing_app/screens/company_details_master.dart';
+import 'package:billing_app/model/invoice_model.dart';
+import 'package:billing_app/screens/invoice.dart';
 import 'package:flutter/material.dart';
-
-import 'screens/home.dart';
-import 'screens/invoice_form.dart';
 import 'package:get/get.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
-import 'screens/old_bill.dart';
+import 'screens/company_details_master.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Hive.initFlutter();
+  Hive.registerAdapter(InvoiceModelAdapter()); // Register the adapter
+  await Hive.openBox<InvoiceModel>('invoiceBox');
+
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -23,7 +27,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: HomeScreen(),
+      home: CompanyDetailsScreen(),
     );
   }
 }
