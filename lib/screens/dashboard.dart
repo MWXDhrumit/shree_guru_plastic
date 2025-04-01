@@ -1,4 +1,7 @@
+import 'package:billing_app/screens/invoice.dart';
 import 'package:flutter/material.dart';
+import 'package:pdf/pdf.dart';
+import 'package:printing/printing.dart';
 import 'invoice_form.dart';
 
 class Dashboard extends StatefulWidget {
@@ -37,9 +40,24 @@ class _DashboardState extends State<Dashboard> {
               ],
             ),
             const SizedBox(height: 20),
-            const Center(
-              child: Text("More Dashboard Content Here"),
+
+            // Centered Generate Invoice Button
+            Center(
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  // Call the printPdf method to generate and print the invoice
+                  PrintPdf().printPdf(context);
+                },
+                icon: const Icon(Icons.picture_as_pdf),
+                label: const Text("Generate Invoice"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                ),
+              ),
             ),
+
           ],
         ),
       ),

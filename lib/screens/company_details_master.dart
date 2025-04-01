@@ -44,7 +44,14 @@ class _CompanyDetailsScreenState extends State<CompanyDetailsScreen> {
               SizedBox(height: 20),
               ElevatedButton(
                 onPressed: ()async{
-                  final model = CompanyDetailsModel(name: companyNameController.text, address: companyAddressController.text, mobileNumber: companyPhoneController.text, gstNumber: companyGSTController.text, bankName: bankNameController.text, ifsc: ifscCodeController.text, accountNo: accountNumberController.text);
+                  final model = CompanyDetailsModel(
+                      name: companyNameController.text,
+                      address: companyAddressController.text,
+                      mobileNumber: companyPhoneController.text,
+                      gstNumber: companyGSTController.text,
+                      bankName: bankNameController.text,
+                      ifsc: ifscCodeController.text,
+                      accountNo: accountNumberController.text);
                   await CompanyDetailsController.saveData(model);
                   await CompanyDetailsController.getData();
                 },
