@@ -1,4 +1,8 @@
+import 'package:billing_app/hive/customer_details_controller.dart';
+import 'package:billing_app/model/customer_details.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:hive_flutter/adapters.dart';
 import 'package:intl/intl.dart';
 
 class InvoiceFormScreen extends StatefulWidget {
@@ -19,6 +23,7 @@ class _InvoiceFormScreenState extends State<InvoiceFormScreen> {
 
   List<Map<String, dynamic>> products = [];
 
+
   @override
   void initState() {
     super.initState();
@@ -29,6 +34,7 @@ class _InvoiceFormScreenState extends State<InvoiceFormScreen> {
     // Listens to changes in CGST and SGST fields to update the total dynamically
     cgstController.addListener(() => setState(() {}));
     sgstController.addListener(() => setState(() {}));
+
   }
 
   void addProduct() {
@@ -42,7 +48,8 @@ class _InvoiceFormScreenState extends State<InvoiceFormScreen> {
       });
     });
   }
-
+//hello haA BOL aa page kya khule che? kyu ?
+  //aa
   void removeProduct(int index) {
     setState(() {
       products.removeAt(index);
@@ -96,7 +103,38 @@ class _InvoiceFormScreenState extends State<InvoiceFormScreen> {
             Divider(thickness: 1, height: 30),
             buildTotalCalculation(),
             SizedBox(height: 20),
-            ElevatedButton(onPressed: () {}, child: Text("Generate Invoice")),
+            ElevatedButton(
+              onPressed: () async {
+                await Hive.openBox<Invoice>('democustomer');
+                final modelCustomer = Invoice(
+                  invoiceNumber: invoiceNumberController.text,
+                  invoiceDate: dateController.text,
+                  customerName: customerNameController.text,
+                  customerAddress: customerAddressController.text,
+                  customerPhone: customerPhoneController.text,
+                  customerGSTIN: customerGSTINController.text,
+                  paymentType: selectedPaymentType,
+                  products: products.map((p) => Product(
+                    productName: p['productName'].text,
+                    hsnCode: p['hsnCode'].text,
+                    quantity: double.tryParse(p['quantity'].text) ?? 0,
+                    rate: double.tryParse(p['rate'].text) ?? 0,
+                    amount: p['amount'],
+                  )).toList(),
+                  cgst: double.tryParse(cgstController.text) ?? 0,
+                  sgst: double.tryParse(sgstController.text) ?? 0,
+                  subTotal: getSubTotal(),
+                  grandTotal: getGrandTotal(),
+                );
+                await CustomerDetailsController.saveData(modelCustomer);
+                // Show a success message
+                ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("Invoice ${modelCustomer.invoiceNumber} saved successfully!"))
+                );
+
+              },
+              child: Text("Generate Invoice"),
+            ),
           ],
         ),
       ),
@@ -109,7 +147,7 @@ class _InvoiceFormScreenState extends State<InvoiceFormScreen> {
       children: [
         Text("Invoice Details", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         SizedBox(height: 8),
-        TextField(controller: invoiceNumberController, decoration: InputDecoration(labelText: "Invoice Number", border: OutlineInputBorder())),
+        buildTextField("Bill Number", invoiceNumberController),
         SizedBox(height: 8),
         TextField(
           controller: dateController,
@@ -150,13 +188,13 @@ class _InvoiceFormScreenState extends State<InvoiceFormScreen> {
       children: [
         Text("Customer Details", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         SizedBox(height: 8),
-        TextField(controller: customerNameController, decoration: InputDecoration(labelText: "Customer Name", border: OutlineInputBorder())),
+        buildTextField("Customer Name", customerNameController),
         SizedBox(height: 8),
-        TextField(controller: customerAddressController, maxLines: 3, decoration: InputDecoration(labelText: "Customer Address", border: OutlineInputBorder())),
+        buildTextField("Customer Address", customerAddressController),
         SizedBox(height: 8),
-        TextField(controller: customerPhoneController, decoration: InputDecoration(labelText: "Customer Phone Number", border: OutlineInputBorder())),
+        buildTextField("Customer Phoen number", customerPhoneController),
         SizedBox(height: 8),
-        TextField(controller: customerGSTINController, decoration: InputDecoration(labelText: "Customer GSTIN (Optional)", border: OutlineInputBorder())),
+        buildTextField("Customer GST", customerGSTINController),
       ],
     );
   }
@@ -169,6 +207,7 @@ class _InvoiceFormScreenState extends State<InvoiceFormScreen> {
         child: Column(
           children: [
             TextField(controller: products[index]['productName'], decoration: InputDecoration(labelText: "Product Name", border: OutlineInputBorder())),
+
             SizedBox(height: 8),
             TextField(controller: products[index]['hsnCode'], decoration: InputDecoration(labelText: "HSN Code", border: OutlineInputBorder())),
             SizedBox(height: 8),
@@ -211,11 +250,63 @@ class _InvoiceFormScreenState extends State<InvoiceFormScreen> {
         Text("CGST: ₹${getCGSTAmount().toStringAsFixed(2)}"),
         Text("SGST: ₹${getSGSTAmount().toStringAsFixed(2)}"),
         SizedBox(height: 8),
-        TextField(controller: cgstController, decoration: InputDecoration(labelText: "CGST %", border: OutlineInputBorder())),
-        TextField(controller: sgstController, decoration: InputDecoration(labelText: "SGST %", border: OutlineInputBorder())),
+        buildTextField("CGST", cgstController),
+        buildTextField("SGST", sgstController),
         SizedBox(height: 8),
         Text("Grand Total: ₹${getGrandTotal().toStringAsFixed(2)}", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
       ],
     );
   }
+  Widget buildTextField(String label, TextEditingController controller, {int maxLines = 1, IconData? icon}) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 24),
+      child: TextField(
+        controller: controller,
+        maxLines: maxLines,
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
+          color: Colors.black,
+        ),
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: TextStyle(
+            color: Colors.grey[600],
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+          ),
+          prefixIcon: icon != null
+              ? Icon(icon, color: Color(0xFF00214d))
+              : null,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(
+              color: Colors.grey[400]!,
+              width: 1.5,
+            ),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(
+              color: Color(0xFF00214d),
+              width: 2.5,
+            ),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(
+              color: Colors.grey[400]!,
+              width: 1.5,
+            ),
+          ),
+          contentPadding: EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+          isDense: true, // To make the TextField more compact
+          filled: true, // Gives the background a light color
+          fillColor: Colors.white,
+        ),
+      ),
+    );
+  }
+
+
 }

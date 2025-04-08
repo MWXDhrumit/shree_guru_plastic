@@ -1,19 +1,29 @@
 import 'package:hive_flutter/adapters.dart';
-
 import '../model/company_details.dart';
 
 class CompanyDetailsController {
 
-
-  static saveData(CompanyDetailsModel companyDetailsModel) async{
+  static Future<void> saveData(CompanyDetailsModel companyDetailsModel) async {
     var box = await Hive.openBox<CompanyDetailsModel>("democompany");
-    box.add(companyDetailsModel);
+    if (box.isNotEmpty) {
+      await updateData(companyDetailsModel);
+    } else {
+      await box.add(companyDetailsModel);
+    }
   }
 
-  static getData() async{
+  static Future<List<CompanyDetailsModel>> getData() async {
     var box = await Hive.openBox<CompanyDetailsModel>("democompany");
-    List<CompanyDetailsModel> list = await box.values.toList();
-    print(list[0].name);
+    return box.values.toList();
   }
 
+  static Future<void> updateData(CompanyDetailsModel updatedCompanyDetails) async {
+    var box = await Hive.openBox<CompanyDetailsModel>("democompany");
+
+    if (box.isNotEmpty) {
+      await box.putAt(0, updatedCompanyDetails);
+    } else {
+      print("No company details found to update.");
+    }
+  }
 }

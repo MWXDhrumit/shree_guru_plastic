@@ -1,21 +1,43 @@
 import 'dart:typed_data';
-import 'package:billing_app/model/customer_details.dart';
+import 'package:billing_app/model/company_details.dart';
 import 'package:flutter/services.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:flutter/material.dart';
-import 'package:printing/printing.dart';
+
+import '../hive/customer_details_controller.dart';
+import '../model/customer_details.dart';
 
 class PDFGenerator {
-  Future<Uint8List> generatePdf() async {
+  List<Invoice> invoiceData = [];
+  List productData = [];
+
+
+
+  Future<Uint8List> generatePdf(Invoice selectedInvoice) async {
     final pdf = pw.Document();
 
-    List<Product> products = [
-      Product(name: "Product 1", hsnSac: "1234", qty: 5, rate: 100, gst: 18, amount: 590),
-      Product(name: "Product 2", hsnSac: "5678", qty: 3, rate: 200, gst: 12, amount: 672),
-    ];
+      var box = await Hive.openBox<CompanyDetailsModel>("democompany");
+      List<CompanyDetailsModel> list = await box.values.toList();
+
+    invoiceData= await CustomerDetailsController.getData();
+    productData = invoiceData[0].products;
+    print("dhrumit ${invoiceData[0].customerAddress}");
+    print("harsh ${productData[0].amount}");
+
+
+    List<Product> products = selectedInvoice.products;
+
+    double subTotal = products.fold(0.0, (sum, item) => sum + item.amount);
+    double cgst = selectedInvoice.cgst;
+    double sgst = selectedInvoice.sgst;
+    double grandTotal = selectedInvoice.grandTotal;
+
+    invoiceData = [selectedInvoice]; // instead of getting all data
+    productData = selectedInvoice.products;
 
     // Load the logo
     final Uint8List logoBytes = (await rootBundle.load('assets/sgp_logo.png')).buffer.asUint8List();
@@ -47,9 +69,9 @@ class PDFGenerator {
                     pw.Column(
                       crossAxisAlignment: pw.CrossAxisAlignment.end,
                       children: [
-                        pw.Text("SHRI GURU PLASTIC", style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)), //company name
-                        pw.Text("F3, B ROAD, SHADE NO.3317 DARED, JAMNAGAR", style: pw.TextStyle(fontSize: 10)), //company address
-                        pw.Text("Mo. 9924475849", style: pw.TextStyle(fontSize: 10)), //company phone number
+                        pw.Text(list[0].name, style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)), //company name
+                        pw.Text(list[0].address, style: pw.TextStyle(fontSize: 10)), //company address
+                        pw.Text(list[0].mobileNumber, style: pw.TextStyle(fontSize: 10)), //company phone number
                       ],
                     ),
                   ],
@@ -63,8 +85,8 @@ class PDFGenerator {
                   child: pw.Row(
                     mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                     children: [
-                      pw.Text("Cash / Debit", style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)), //cash/dabit
-                      pw.Text("Invoice No.: GT/394", style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)), //invoice number
+                      pw.Text(selectedInvoice.paymentType, style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)), //cash/dabit
+                      pw.Text(list[0].gstNumber, style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)), //invoice number
                     ],
                   ),
                 ),
@@ -84,11 +106,10 @@ class PDFGenerator {
                             crossAxisAlignment: pw.CrossAxisAlignment.start,
                             children: [
                               pw.Text("Name & Address", style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)), //customer
-                              pw.Text("SHRI GURU PLASTIC", style: pw.TextStyle(fontSize: 9)), //customer name
-                              pw.Text("F3, B ROAD, SHADE NO.3317 DARED, JAMNAGAR", style: pw.TextStyle(fontSize: 9)), //customer address
-                              pw.Text("9924475849", style: pw.TextStyle(fontSize: 9)), //customer phone number
-                              pw.Text("Place of Supply: 24-Gujarat", style: pw.TextStyle(fontSize: 9)),
-                              pw.Text("GSTIN No.: 24AMZPB4007H1Z5", style: pw.TextStyle(fontSize: 9)), //customer gst
+                              pw.Text("Customer Name : ${selectedInvoice.customerName}", style: pw.TextStyle(fontSize: 9)), //customer name
+                              pw.Text("Customer Address : ${selectedInvoice.customerAddress}", style: pw.TextStyle(fontSize: 9)), //customer address
+                              pw.Text("Customer Mobile : ${selectedInvoice.customerPhone}", style: pw.TextStyle(fontSize: 9)), //customer phone number
+                              pw.Text("Customer GST : ${selectedInvoice.customerGSTIN}", style: pw.TextStyle(fontSize: 9)), //customer gst
                             ],
                           ),
                         ),
@@ -97,8 +118,8 @@ class PDFGenerator {
                           child: pw.Column(
                             crossAxisAlignment: pw.CrossAxisAlignment.start,
                             children: [
-                              pw.Text("Bill No.: GT/394", style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)), //bill number
-                              pw.Text("Date: ${DateFormat('dd/MM/yyyy').format(DateTime.now())}", style: pw.TextStyle(fontSize: 10)), //date
+                              pw.Text(selectedInvoice.invoiceNumber, style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)), //bill number
+                              pw.Text(selectedInvoice.invoiceDate)
                             ],
                           ),
                         ),
@@ -130,26 +151,25 @@ class PDFGenerator {
                       pw.TableRow(
                         decoration: pw.BoxDecoration(color: PdfColors.grey300),
                         children: [
-                          pw.Padding(child: pw.Text("SrNo", style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold)), padding: pw.EdgeInsets.all(8)),
-                          pw.Padding(child: pw.Text("Product Name", style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold)), padding: pw.EdgeInsets.all(8)),
-                          pw.Padding(child: pw.Text("HSN/SAC", style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold)), padding: pw.EdgeInsets.all(8)),
-                          pw.Padding(child: pw.Text("Qty", style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold)), padding: pw.EdgeInsets.all(8)),
-                          pw.Padding(child: pw.Text("Rate", style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold)), padding: pw.EdgeInsets.all(8)),
-                          pw.Padding(child: pw.Text("GST %", style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold)), padding: pw.EdgeInsets.all(8)),
-                          pw.Padding(child: pw.Text("Amount", style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold)), padding: pw.EdgeInsets.all(8)),
+                          _cell("SrNo"),
+                          _cell("Product Name"),
+                          _cell("HSN/SAC"),
+                          _cell("Qty"),
+                          _cell("Rate"),
+                          _cell("Amount"),
                         ],
                       ),
 
                       // Product Rows (Always 10 Rows)
                       ...List.generate(10, (index) {
+                        final item = index < products.length ? products[index] : null;
                         return pw.TableRow(
                           children: [
                             pw.Padding(child: pw.Text(index < products.length ? (index + 1).toString() : "", style: pw.TextStyle(fontSize: 10)), padding: pw.EdgeInsets.symmetric(vertical: 12, horizontal: 8)),
-                            pw.Padding(child: pw.Text(index < products.length ? products[index].name : "", style: pw.TextStyle(fontSize: 10)), padding: pw.EdgeInsets.symmetric(vertical: 12, horizontal: 8)),
-                            pw.Padding(child: pw.Text(index < products.length ? products[index].hsnSac : "", style: pw.TextStyle(fontSize: 10)), padding: pw.EdgeInsets.symmetric(vertical: 12, horizontal: 8)),
-                            pw.Padding(child: pw.Text(index < products.length ? products[index].qty.toString() : "", style: pw.TextStyle(fontSize: 10)), padding: pw.EdgeInsets.symmetric(vertical: 12, horizontal: 8)),
+                            pw.Padding(child: pw.Text(index < products.length ? products[index].productName : "", style: pw.TextStyle(fontSize: 10)), padding: pw.EdgeInsets.symmetric(vertical: 12, horizontal: 8)),
+                            pw.Padding(child: pw.Text(index < products.length ? products[index].hsnCode : "", style: pw.TextStyle(fontSize: 10)), padding: pw.EdgeInsets.symmetric(vertical: 12, horizontal: 8)),
+                            pw.Padding(child: pw.Text(index < products.length ? products[index].quantity.toString() : "", style: pw.TextStyle(fontSize: 10)), padding: pw.EdgeInsets.symmetric(vertical: 12, horizontal: 8)),
                             pw.Padding(child: pw.Text(index < products.length ? products[index].rate.toString() : "", style: pw.TextStyle(fontSize: 10)), padding: pw.EdgeInsets.symmetric(vertical: 12, horizontal: 8)),
-                            pw.Padding(child: pw.Text(index < products.length ? products[index].gst.toString() : "", style: pw.TextStyle(fontSize: 10)), padding: pw.EdgeInsets.symmetric(vertical: 12, horizontal: 8)),
                             pw.Padding(child: pw.Text(index < products.length ? products[index].amount.toString() : "", style: pw.TextStyle(fontSize: 10)), padding: pw.EdgeInsets.symmetric(vertical: 12, horizontal: 8)),
                           ],
                         );
@@ -173,9 +193,9 @@ class PDFGenerator {
                           crossAxisAlignment: pw.CrossAxisAlignment.start,
                           children: [
                             pw.Text("Bank Details:", style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
-                            pw.Text("Bank Name: HDFC BANK", style: pw.TextStyle(fontSize: 9)), //bank name
-                            pw.Text("Bank A/C No.: 5020029517620", style: pw.TextStyle(fontSize: 9)), //account number
-                            pw.Text("RTGS/IFSC Code: HDFC0001659", style: pw.TextStyle(fontSize: 9)), //ifsc
+                            pw.Text("Bank Name : ${list[0].bankName}", style: pw.TextStyle(fontSize: 9)), //bank name
+                            pw.Text("Bank Account Number : ${list[0].accountNo}", style: pw.TextStyle(fontSize: 9)), //account number
+                            pw.Text("Bank IFSC : ${list[0].ifsc}", style: pw.TextStyle(fontSize: 9)), //ifsc
                           ],
                         ),
                       ),
@@ -192,13 +212,12 @@ class PDFGenerator {
                         child: pw.Column(
                           crossAxisAlignment: pw.CrossAxisAlignment.end,
                           children: [
-                            pw.Text("Sub Total: 6750.00",
+                            pw.Text("Sub Total: ${subTotal.toStringAsFixed(2)}",
                                 style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
-                            pw.Text("Taxable Amount: 6750.00", style: pw.TextStyle(fontSize: 10)),
-                            pw.Text("CGST 9%: 607.50", style: pw.TextStyle(fontSize: 10)),
-                            pw.Text("SGST 9%: 607.50", style: pw.TextStyle(fontSize: 10)),
+                            pw.Text("CGST 9%: ${(cgst).toStringAsFixed(2)}", style: pw.TextStyle(fontSize: 10)),
+                            pw.Text("SGST 9%: ${(sgst).toStringAsFixed(2)}", style: pw.TextStyle(fontSize: 10)),
                             pw.Divider(),
-                            pw.Text("Grand Total: 7,965.00",
+                            pw.Text("Grand Total:  ${grandTotal.toStringAsFixed(2)}",
                                 style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
                           ],
                         ),
@@ -242,15 +261,23 @@ class PDFGenerator {
 
     return pdf.save();
   }
+  pw.Widget _cell(String text) {
+    return pw.Padding(
+      padding: pw.EdgeInsets.all(6),
+      child: pw.Text(text, style: pw.TextStyle(fontSize: 10)),
+    );
+  }
 }
 class PrintPdf {
-  void printPdf(BuildContext context) async {
-    final pdfData = await PDFGenerator().generatePdf();
+  void printInvoice(BuildContext context, Invoice invoice) async {
+    final pdfData = await PDFGenerator().generatePdf(invoice);
     await Printing.layoutPdf(onLayout: (PdfPageFormat format) async => pdfData);
   }
 }
 
-class Product {
+
+
+class Product_invoice {
   final String name;
   final String hsnSac;
   final int qty;
@@ -258,7 +285,7 @@ class Product {
   final double gst;
   final double amount;
 
-  Product({
+  Product_invoice({
     required this.name,
     required this.hsnSac,
     required this.qty,

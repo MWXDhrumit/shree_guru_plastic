@@ -25,14 +25,12 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Invoice App'),
-        centerTitle: true,
-      ),
       body: _pages[_selectedIndex],
       bottomNavigationBar: FlashyTabBar(
         selectedIndex: _selectedIndex,
+        backgroundColor: Color(0xFF00214d),
         showElevation: true,
+
         onItemSelected: (index) => setState(() {
           _selectedIndex = index;
         }),
@@ -40,14 +38,19 @@ class _HomeScreenState extends State<HomeScreen> {
           FlashyTabBarItem(
             icon: Icon(Icons.receipt_long),
             title: Text('Dashboard'),
+              activeColor: Colors.white
+
           ),
           FlashyTabBarItem(
             icon: Icon(Icons.article),
             title: Text('OldBill'),
+              activeColor: Colors.white
+
           ),
           FlashyTabBarItem(
             icon: Icon(Icons.history),
             title: Text('Master'),
+            activeColor: Colors.white
           ),
 
 
