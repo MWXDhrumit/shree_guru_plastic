@@ -1,5 +1,9 @@
 import 'package:billing_app/hive/customer_details_controller.dart';
+import 'package:billing_app/hive/master_customer_controller.dart';
+import 'package:billing_app/hive/master_product_controller.dart';
 import 'package:billing_app/model/customer_details.dart';
+import 'package:billing_app/model/master_customer_model.dart';
+import 'package:billing_app/model/master_product_model.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hive_flutter/adapters.dart';
@@ -23,10 +27,16 @@ class _InvoiceFormScreenState extends State<InvoiceFormScreen> {
 
   List<Map<String, dynamic>> products = [];
 
+  List<MasterCustomer> masterCustomers = [];
+  List<MasterProduct> masterProducts = [];
+  MasterCustomer? selectedCustomer;
+
+
 
   @override
   void initState() {
     super.initState();
+    loadMasterData();
     dateController.text = DateFormat('yyyy-MM-dd').format(DateTime.now());
     cgstController.text = "9"; // Default 9% CGST
     sgstController.text = "9"; // Default 9% SGST
@@ -35,6 +45,12 @@ class _InvoiceFormScreenState extends State<InvoiceFormScreen> {
     cgstController.addListener(() => setState(() {}));
     sgstController.addListener(() => setState(() {}));
 
+  }
+
+  void loadMasterData() async {
+    masterCustomers = await MasterCustomerController.getAllCustomers();
+    masterProducts = await MasterProductController.getAllProducts();
+    setState(() {});
   }
 
   void addProduct() {
@@ -121,8 +137,8 @@ class _InvoiceFormScreenState extends State<InvoiceFormScreen> {
                     rate: double.tryParse(p['rate'].text) ?? 0,
                     amount: p['amount'],
                   )).toList(),
-                  cgst: double.tryParse(cgstController.text) ?? 0,
-                  sgst: double.tryParse(sgstController.text) ?? 0,
+                  cgst: double.parse(getCGSTAmount().toStringAsFixed(2)),
+                  sgst: double.parse(getSGSTAmount().toStringAsFixed(2)),
                   subTotal: getSubTotal(),
                   grandTotal: getGrandTotal(),
                 );
@@ -131,7 +147,7 @@ class _InvoiceFormScreenState extends State<InvoiceFormScreen> {
                 ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text("Invoice ${modelCustomer.invoiceNumber} saved successfully!"))
                 );
-
+                Get.back();
               },
               child: Text("Generate Invoice"),
             ),
@@ -172,7 +188,7 @@ class _InvoiceFormScreenState extends State<InvoiceFormScreen> {
         SizedBox(height: 8),
         DropdownButtonFormField(
           value: selectedPaymentType,
-          items: ['Cash', 'Credit', 'UPI'].map((String type) {
+          items: ['Cash', 'Debit',].map((String type) {
             return DropdownMenuItem(value: type, child: Text(type));
           }).toList(),
           onChanged: (value) => setState(() => selectedPaymentType = value as String),
@@ -186,7 +202,25 @@ class _InvoiceFormScreenState extends State<InvoiceFormScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("Customer Details", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        DropdownButtonFormField<MasterCustomer>(
+          value: selectedCustomer,
+          items: masterCustomers.map((cust) {
+            return DropdownMenuItem(
+              value: cust,
+              child: Text(cust.master_customer_Name),
+            );
+          }).toList(),
+          onChanged: (value) {
+            setState(() {
+              selectedCustomer = value;
+              customerNameController.text = value?.master_customer_Name ?? '';
+              customerAddressController.text = value?.master_customer_address ?? '';
+              customerPhoneController.text = value?.master_customer_phone ?? '';
+              customerGSTINController.text = value?.master_customer_gst ?? '';
+            });
+          },
+          decoration: InputDecoration(labelText: "Select Customer", border: OutlineInputBorder()),
+        ),
         SizedBox(height: 8),
         buildTextField("Customer Name", customerNameController),
         SizedBox(height: 8),
@@ -206,18 +240,55 @@ class _InvoiceFormScreenState extends State<InvoiceFormScreen> {
         padding: EdgeInsets.all(8),
         child: Column(
           children: [
-            TextField(controller: products[index]['productName'], decoration: InputDecoration(labelText: "Product Name", border: OutlineInputBorder())),
+            DropdownButtonFormField<String>(
+              value: products[index]['productName'].text.isNotEmpty
+                  ? products[index]['productName'].text
+                  : null,
+              items: masterProducts.map((product) {
+                return DropdownMenuItem(
+                  value: product.master_product_Name,
+                  child: Text(product.master_product_Name),
+                );
+              }).toList(),
+              onChanged: (value) {
+                final selectedProduct = masterProducts.firstWhere(
+                      (p) => p.master_product_Name == value,
+                );
+
+                setState(() {
+                  products[index]['productName'].text = selectedProduct.master_product_Name;
+                  products[index]['hsnCode'].text = selectedProduct.master_product_hsnCode;
+                });
+              },
+              decoration: InputDecoration(
+                labelText: "Select Product",
+                border: OutlineInputBorder(),
+              ),
+            ),
 
             SizedBox(height: 8),
-            TextField(controller: products[index]['hsnCode'], decoration: InputDecoration(labelText: "HSN Code", border: OutlineInputBorder())),
+
+            TextField(
+              controller: products[index]['hsnCode'],
+              readOnly: true,
+              decoration: InputDecoration(
+                labelText: "HSN Code",
+                border: OutlineInputBorder(),
+              ),
+            ),
+
             SizedBox(height: 8),
+
             Row(
               children: [
                 Expanded(
                   child: TextField(
                     controller: products[index]['quantity'],
                     keyboardType: TextInputType.number,
-                    decoration: InputDecoration(labelText: "Qty", border: OutlineInputBorder()),
+                    decoration: InputDecoration(
+                      labelText: "Qty",
+                      border: OutlineInputBorder(),
+                    ),
                     onChanged: (_) => calculateAmount(index),
                   ),
                 ),
@@ -226,15 +297,22 @@ class _InvoiceFormScreenState extends State<InvoiceFormScreen> {
                   child: TextField(
                     controller: products[index]['rate'],
                     keyboardType: TextInputType.number,
-                    decoration: InputDecoration(labelText: "Rate per Piece", border: OutlineInputBorder()),
+                    decoration: InputDecoration(
+                      labelText: "Rate per Piece",
+                      border: OutlineInputBorder(),
+                    ),
                     onChanged: (_) => calculateAmount(index),
                   ),
                 ),
               ],
             ),
+
             SizedBox(height: 8),
             Text("Amount: ₹${products[index]['amount'].toStringAsFixed(2)}"),
-            TextButton(onPressed: () => removeProduct(index), child: Text("Remove")),
+            TextButton(
+              onPressed: () => removeProduct(index),
+              child: Text("Remove"),
+            ),
           ],
         ),
       ),

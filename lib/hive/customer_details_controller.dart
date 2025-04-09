@@ -37,4 +37,14 @@ class CustomerDetailsController {
       print("Invoice not found for update.");
     }
   }
+
+  static Future<void> deleteInvoice(String invoiceNumber) async {
+    var box = await Hive.openBox<Invoice>("democustomer");
+
+    int index = box.values.toList().indexWhere((inv) => inv.invoiceNumber == invoiceNumber);
+    if (index != -1) {
+      await box.deleteAt(index);
+    }
+  }
+
 }

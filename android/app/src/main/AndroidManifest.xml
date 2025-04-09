@@ -6,7 +6,7 @@
 
 
     <application
-        android:label="billing_app"
+        android:label="Shree Guru Plastic"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
 

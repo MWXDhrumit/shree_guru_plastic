@@ -1,11 +1,12 @@
-import 'package:billing_app/screens/old_bill.dart';
+import 'package:billing_app/screens/invoice_folder/old_bill.dart';
 import 'package:flutter/material.dart';
 import 'package:flashy_tab_bar2/flashy_tab_bar2.dart';
 
-import 'company_details_master.dart';
+import 'master/company_details_master.dart';
 import 'dashboard.dart';
-import 'invoice.dart';
-import 'invoice_form.dart';
+import 'invoice_folder/invoice.dart';
+import 'invoice_folder/invoice_form.dart';
+import 'master/setting.dart';
 
 
 class HomeScreen extends StatefulWidget {
@@ -19,7 +20,8 @@ class _HomeScreenState extends State<HomeScreen> {
   final List<Widget> _pages = [
     Dashboard(),
     OldBillPage(),
-    CompanyDetailsScreen(),
+    // CompanyDetailsScreen(),
+    SettingsScreen()
   ];
 
   @override

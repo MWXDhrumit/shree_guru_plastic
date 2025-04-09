@@ -1,7 +1,7 @@
 import 'package:billing_app/model/company_details.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
-import '../hive/company_details_controller.dart';
+import '../../hive/company_details_controller.dart';
 
 class CompanyDetailsScreen extends StatefulWidget {
   @override
@@ -103,7 +103,7 @@ class _CompanyDetailsScreenState extends State<CompanyDetailsScreen> {
                       _loadCompanyDetails(); // Refresh UI
                     },
                     style: ElevatedButton.styleFrom(
-                      primary: isUpdating ? Colors.green : Color(0xFF00214d),
+                      backgroundColor: isUpdating ? Colors.green : Color(0xFF00214d),
                       padding: EdgeInsets.symmetric(horizontal: 30, vertical: 12),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),

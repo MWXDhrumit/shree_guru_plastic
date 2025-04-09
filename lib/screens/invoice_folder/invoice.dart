@@ -8,8 +8,8 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:flutter/material.dart';
 
-import '../hive/customer_details_controller.dart';
-import '../model/customer_details.dart';
+import '../../hive/customer_details_controller.dart';
+import '../../model/customer_details.dart';
 
 class PDFGenerator {
   List<Invoice> invoiceData = [];
@@ -105,11 +105,11 @@ class PDFGenerator {
                           child: pw.Column(
                             crossAxisAlignment: pw.CrossAxisAlignment.start,
                             children: [
-                              pw.Text("Name & Address", style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)), //customer
-                              pw.Text("Customer Name : ${selectedInvoice.customerName}", style: pw.TextStyle(fontSize: 9)), //customer name
-                              pw.Text("Customer Address : ${selectedInvoice.customerAddress}", style: pw.TextStyle(fontSize: 9)), //customer address
-                              pw.Text("Customer Mobile : ${selectedInvoice.customerPhone}", style: pw.TextStyle(fontSize: 9)), //customer phone number
-                              pw.Text("Customer GST : ${selectedInvoice.customerGSTIN}", style: pw.TextStyle(fontSize: 9)), //customer gst
+                              pw.Text("Customer Details", style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)), //customer
+                              pw.Text("Name : ${selectedInvoice.customerName}", style: pw.TextStyle(fontSize: 9)), //customer name
+                              pw.Text("Address : ${selectedInvoice.customerAddress}", style: pw.TextStyle(fontSize: 9)), //customer address
+                              pw.Text("Mobile : ${selectedInvoice.customerPhone}", style: pw.TextStyle(fontSize: 9)), //customer phone number
+                              pw.Text("GST : ${selectedInvoice.customerGSTIN}", style: pw.TextStyle(fontSize: 9)), //customer gst
                             ],
                           ),
                         ),
@@ -118,8 +118,8 @@ class PDFGenerator {
                           child: pw.Column(
                             crossAxisAlignment: pw.CrossAxisAlignment.start,
                             children: [
-                              pw.Text(selectedInvoice.invoiceNumber, style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)), //bill number
-                              pw.Text(selectedInvoice.invoiceDate)
+                              pw.Text("Bill No : ${selectedInvoice.invoiceNumber}", style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)), //bill number
+                              pw.Text("Bill Date : ${selectedInvoice.invoiceDate}")
                             ],
                           ),
                         ),
@@ -153,7 +153,7 @@ class PDFGenerator {
                         children: [
                           _cell("SrNo"),
                           _cell("Product Name"),
-                          _cell("HSN/SAC"),
+                          _cell("HSN"),
                           _cell("Qty"),
                           _cell("Rate"),
                           _cell("Amount"),
@@ -233,7 +233,7 @@ class PDFGenerator {
                 pw.Text("1. Goods once sold will not be taken back.", style: pw.TextStyle(fontSize: 9)),
                 pw.Text("2. Interest @18% p.a. will be charged if payment is not made within due date.", style: pw.TextStyle(fontSize: 9)),
                 pw.Text("3. Our risk and responsibility ceases as soon as the goods leave our premises.", style: pw.TextStyle(fontSize: 9)),
-                pw.Text("4. 'Subject to RAJKOT Jurisdiction only. E.&O.E'", style: pw.TextStyle(fontSize: 9)),
+                pw.Text("4. 'Subject to JAMNAGAR Jurisdiction only. E.&O.E'", style: pw.TextStyle(fontSize: 9)),
 
                 pw.SizedBox(height: 5),
                 pw.Column(
